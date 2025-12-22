@@ -1,0 +1,37 @@
+@startuml C4_Context_Diagram
+set separator none
+title Bank - Context
+
+top to bottom direction
+
+!include <C4/C4_Container>
+
+Person(NewClient, "Новый клиент", "Подает заявку через сайт")
+Person(ExistingClient, "Существующий клиент", "Открывает депозит онлайн")
+Person(CallCenterAgent, "Менеджер кол-центра", "Обрабатывает заявки")
+Person(BackOffice, "Бэк-офис", "Подтверждает условия")
+
+System(Website, "Сайт банка", "")
+System(InternetBank, "Интернет-банк", "")
+System(abs, "АБС", "")
+System(InstallInternetBank, "Установка интернет-банка нового клиента", "")
+System_Ext(CallCenter, "Кол-центр", "")
+System_Ext(smsGateway, "SMS-шлюз", "Интеграция с оператором")
+
+Rel(NewClient, Website, "Подает заявку")
+Rel(Website, CallCenter, "REST API")
+Rel(CallCenter, CallCenterAgent, "Назначение")
+Rel(CallCenterAgent, abs, "Ввод данных (если клиент отказался от установки интернет банка)")
+Rel(CallCenterAgent, InstallInternetBank, "Помощь в установке")
+Rel(InstallInternetBank, abs, "Kafka")
+
+Rel(ExistingClient, InternetBank, "Онлайн-заявка")
+Rel(InternetBank, abs, "Kafka")
+Rel(InternetBank, smsGateway, "Запрос SMS-кода")
+Rel(smsGateway, SmsProvider, "Отправка SMS")
+
+Rel(abs, BackOffice, "Согласование")
+Rel(abs, smsGateway, "Уведомление")
+
+Rel(BackOffice, CreateAgreement, "Подготовка договора")
+@enduml
