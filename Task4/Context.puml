@@ -1,0 +1,38 @@
+@startuml C4_Context_Diagram
+set separator none
+title Standart Bank - Deposit Context (MVP)
+
+top to bottom direction
+
+!include <C4/C4_Container>
+
+Person(NewClient, "Новый клиент", "Подает заявку через сайт")
+Person(ExistingClient, "Существующий клиент", "Открывает депозит онлайн")
+Person(CallCenterAgent, "Менеджер кол-центра", "Обрабатывает заявки")
+Person(BackOffice, "Бэк-офис", "Подтверждает условия")
+
+System(website, "Сайт банка", "")
+System(InternetBank, "Интернет-банк", "")
+System(ABS, "АБС", "")
+System(SftpServer, "SFTP-сервер", "Хранение файлов с ставками")
+System_Ext(CallCenter, "Кол-центр", "")
+System_Ext(SmsGateway, "SMS-шлюз", "Интеграция с оператором")
+System_Ext(PartnerCallCenter, "Партнёрский кол-центр", "Внешняя система")
+
+
+Rel(NewClient, website, "Подает заявку")
+Rel(website, CallCenter, "REST API")
+Rel(CallCenter, CallCenterAgent, "Назначение")
+Rel(CallCenterAgent, ABS, "Ввод данных")
+
+Rel(ExistingClient, InternetBank, "Онлайн-заявка")
+Rel(InternetBank, ABS, "Kafka")
+Rel(InternetBank, SmsGateway, "Запрос SMS-кода")
+Rel(SmsGateway, SmsProvider, "Отправка SMS")
+Rel(ABS, SftpServer, "Отправка SMS")
+Rel(SftpServer, CallCenter, "")
+Rel(SftpServer, PartnerCallCenter, "")
+
+Rel(ABS, BackOffice, "Согласование")
+Rel(ABS, SmsGateway, "Уведомление")
+@enduml

@@ -1,0 +1,74 @@
+@startuml C4_Container_Diagram
+title Standart Bank - Deposit Containers
+
+top to bottom direction
+
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!include <C4/C4_Container>
+!include DEVICONS/postgresql.puml
+
+title Диаграмма контейнеров: Открытие депозитов (MVP)
+
+Person(NewClient, "Новый клиент", "Подает заявку через сайт")
+Person(ExistingClient, "Существующий клиент", "Открывает депозит онлайн")
+Person(Admin, "Администратор бэк-офиса", "Открывает депозит онлайн")
+
+Container(MobileApplication, "Mobile Application", $techn="Android IOS", $descr="Мобильное приложение", $tags="", $link="")
+Container(WebApplication, "Web Application", $techn="JS, Angular, React, Node.js", $descr="WEB приложение", $tags="", $link="")
+
+System_Boundary(Bank, "Банк «Стандарт»") {
+  Container(Bank.ApiGateWay, "API gateway", $techn="Spring Cloud", $descr="Единая точка входа для приложения", $tags="", $link="")
+  Container(Bank.UserService, "User service", $techn="Spring boot", $descr="Сервис пользователей", $tags="", $link="")
+  ContainerDb(Bank.UserService.Database, "", $techn="Postgres", $descr="БД пользователей", $tags="", $link="", $sprite="postgresql")
+  Container(Bank.DepositService, "Deposit service", $techn="Spring boot", $descr="Сервис депозитов", $tags="", $link="")
+  ContainerDb(Bank.DepositService.Database, "", $techn="Postgres", $descr="БД депозитов", $tags="", $link="", $sprite="postgresql")
+
+  Container(Bank.BidService, "Bid service", $techn="Spring boot", $descr="Сервис заявок", $tags="", $link="")
+  ContainerDb(Bank.BidService.Database, "", $techn="Postgres", $descr="БД заявок", $tags="", $link="", $sprite="postgresql")
+
+  Container(Bank.AdminService, "Admin service", $techn="Spring boot", $descr="Сервис администратора", $tags="", $link="")
+  ContainerDb(Bank.AdminService.Database, "Admin Service Database", $techn="Postgres", $descr="БД хранения данных администраторов", $tags="", $link="", $sprite="postgresql")
+
+  Container(Bank.ABS, "АБС", "Java Spring Boot", "Финансовые операции, договоры")
+  SystemQueue_Ext(Broker, "Kafka", $descr="Брокер сообщений", $tags="", $link="")
+  System(KeyCloak, "KeyCloak", $descr="Система авторизации и аутонтификации пользователей", $tags="", $link="")
+}
+
+System_Ext(CallCenter, "Кол-центр (Обработка звонков)", "")
+System_Ext(SmsGateway, "SMS-шлюз", "Интеграция с API оператора", "Отправка уведомлений")
+
+Rel(NewClient, WebApplication, "Клиент выбирает депозит")
+Rel(WebApplication, Bank.ApiGateWay, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+
+
+Rel(ExistingClient, MobileApplication, "Клиент выбирает депозит", $techn="", $tags="", $link="")
+Rel(ExistingClient, WebApplication, "Клиент выбирает депозит", $techn="", $tags="", $link="")
+Rel(Admin, Bank.ApiGateWay, "Работа с депозитами", $techn="", $tags="", $link="")
+
+Rel(CallCenter, NewClient, "Звонок для уточнения")
+
+
+
+Rel(Bank.UserService, Bank.UserService.Database, "", $techn="SQL")
+Rel(Bank.BidService, Bank.BidService.Database, "", $techn="SQL")
+Rel(Bank.DepositService, Bank.DepositService.Database, "", $techn="SQL")
+Rel(Bank.AdminService, Bank.AdminService.Database, "", $techn="SQL")
+Rel(Bank.ApiGateWay, Bank.UserService, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Bank.ApiGateWay, Bank.DepositService, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Bank.ApiGateWay, Bank.BidService, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Bank.BidService, CallCenter, "Отправляет информацию о заявке", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Bank.ApiGateWay, Bank.AdminService, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+
+Rel(Bank.DepositService, Broker, "Очередь", $techn="que")
+Rel(Broker, Bank.ABS, "Очередь", $techn="que")
+Rel(Bank.ABS, SmsGateway, "Отправка кода подтверждения", $techn="HTTPS/JSON, SMTP")
+
+Rel(KeyCloak, Bank.UserService, "Проверка JWT-токена", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(KeyCloak, Bank.ApiGateWay, "Проверка JWT-токена", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(KeyCloak, MobileApplication, "Проверка JWT-токена", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(KeyCloak, Bank.AdminService, "Проверка JWT-токена", $techn="HTTPS/JSON", $tags="", $link="")
+
+Rel(MobileApplication, Bank.ApiGateWay, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(CallCenter, Bank.ApiGateWay, "Ввод данных в АБС", $techn="SOAP")
+
+@enduml
