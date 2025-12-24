@@ -1,6 +1,6 @@
 @startuml C4_Context_Diagram
 set separator none
-title Bank - Context
+title Standart Bank - Deposit Context
 
 top to bottom direction
 

@@ -1,0 +1,61 @@
+@startuml C4_Container_Diagram
+title Standart Bank - Credit line Containers (MVP)
+
+top to bottom direction
+
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!include <C4/C4_Container>
+!include DEVICONS/java.puml
+!include DEVICONS/postgresql.puml
+
+title Диаграмма контейнеров: Заявка/выдача кредита новому клиенту банка (MVP)
+
+Person(NewClient, "Новый клиент", "Подает заявку на кредит через сайт")
+
+Container(WebApplication, "Web Application", $techn="JS, Angular, React, Node.js", $descr="WEB приложение прием заявок и сайт банка", $tags="", $link="")
+Container(AdminWebApplication, "Web Application", $techn="JS, Angular, React, Node.js", $descr="WEB приложение расширенное (интерфейс администратора)", $tags="", $link="")
+
+System_Boundary(Bank, "Банк «Стандарт»") {
+  Container(Bank.ApiGateWay, "API gateway", $techn="Spring Cloud", $descr="Единая точка входа для приложения", $tags="", $link="", $sprite="java")
+  Container(Bank.UserService, "User service", $techn="Spring boot", $descr="Сервис пользователей", $tags="", $link="", $sprite="java")
+  ContainerDb(Bank.UserService.Database, "", $techn="Postgres", $descr="БД пользователей", $tags="", $link="", $sprite="postgresql")
+  Container(Bank.CreditService, "Credit service", $techn="Spring boot", $descr="Сервис кредитов (обработка заявки (кредитный конвейер + запрос кредитной истории (Rest Api)))", $tags="", $link="", $sprite="java")
+  ContainerDb(Bank.CreditService.Database, "", $techn="Postgres", $descr="БД кредитов", $tags="", $link="", $sprite="postgresql")
+
+  Container(Bank.BidService, "Bid service", $techn="Spring boot", $descr="Сервис заявок отправляет сообщения в брокер сообщений", $tags="", $link="", $sprite="java")
+  ContainerDb(Bank.BidService.Database, "", $techn="Postgres", $descr="БД заявок", $tags="", $link="", $sprite="postgresql")
+
+  Container(Bank.ABS, "АБС", "Java Spring Boot", "Финансовые операции, договоры")
+  SystemQueue_Ext(Broker, "Kafka", $descr="Брокер сообщений", $tags="", $link="")
+  System(KeyCloak, "KeyCloak", $descr="Система авторизации и аутентификации пользователей", $tags="", $link="")
+
+  }
+
+System_Ext(CallCenter, "Кол-центр (Обработка звонков)", "Звонит новому клиенту, дополняет данные к заявке (пасп данные и возможно запрашивает 2-НДФЛ)")
+System_Ext(SmsGateway, "SMS-шлюз", "Интеграция с API оператора", "Отправка уведомлений")
+
+Rel(NewClient, WebApplication, "Клиент подает заявку на кредит")
+
+Rel(CallCenter, AdminWebApplication, "Получение/обработка заявки на кредит")
+Rel(WebApplication, Bank.ApiGateWay, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+
+Rel(AdminWebApplication, Bank.ApiGateWay, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+
+Rel(CallCenter, NewClient, "Звонок для уточнения и дополнения заявки")
+
+Rel(Bank.UserService, Bank.UserService.Database, "", $techn="SQL")
+Rel(Bank.BidService, Bank.BidService.Database, "", $techn="SQL")
+Rel(Bank.CreditService, Bank.CreditService.Database, "", $techn="SQL")
+Rel(Bank.ApiGateWay, Bank.UserService, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Bank.ApiGateWay, Bank.CreditService, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Bank.ApiGateWay, Bank.BidService, "REST-запрос", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Bank.BidService, CallCenter, "Отправляет информацию о заявке", $techn="Брокер сообщений/JSON", $tags="", $link="")
+
+Rel(Bank.CreditService, Broker, "Очередь", $techn="que")
+Rel(Broker, Bank.ABS, "Очередь", $techn="que")
+Rel(Bank.ABS, SmsGateway, "Отправка кода подтверждения", $techn="HTTPS/JSON, SMTP")
+
+Rel(KeyCloak, Bank.UserService, "Проверка JWT-токена", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(KeyCloak, Bank.ApiGateWay, "Проверка JWT-токена", $techn="HTTPS/JSON", $tags="", $link="")
+
+@enduml

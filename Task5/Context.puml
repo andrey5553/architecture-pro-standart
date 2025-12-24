@@ -1,0 +1,27 @@
+@startuml C4_Context_Diagram
+set separator none
+title Bank - Credit Context (MVP)
+
+top to bottom direction
+
+!include <C4/C4_Container>
+
+Person(NewClient, "Новый клиент", "Подает заявку на кредит через сайт")
+Person(CallCenterAgent, "Менеджер кол-центра", "Обрабатывает заявки")
+Person(BackOffice, "Бэк-офис", "Принимает заявки, передает их в кредитный отдел и сообщает о результате")
+
+System(website, "Сайт банка", "")
+System(ABS, "АБС", "")
+System_Ext(CallCenter, "Кол-центр", "")
+System_Ext(SmsGateway, "SMS-шлюз", "Интеграция с оператором")
+
+Rel(NewClient, website, "Подает заявку")
+Rel(website, CallCenter, "REST API")
+Rel(CallCenter, CallCenterAgent, "Назначение")
+Rel(CallCenterAgent, ABS, "Ввод данных")
+
+Rel(SmsGateway, SmsProvider, "Отправка SMS по статусам заявки")
+
+Rel(ABS, BackOffice, "Согласование или отказ кредитной заявки")
+Rel(ABS, SmsGateway, "Уведомление о результате и также промежуточные статусы по заявке (отправка их клиенту)")
+@enduml

@@ -1,5 +1,5 @@
 @startuml C4_Container_Diagram
-title Bank - Containers
+title Standart Bank - Deposit Containers
 
 top to bottom direction
 
